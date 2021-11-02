@@ -1,4 +1,5 @@
-#include utils.c
+#include <stdio.h>
+#include "utils.h"
 #define RECEIVER 0
 #define SENDER 1
 #define SET 0
@@ -24,6 +25,9 @@ int llopen(int port, int role)
     {
         int STOP = FALSE;   
         int i = 0;
+        int res;
+        char buf[255];
+        char str[255];
         while (STOP == FALSE) {       /* loop for input */
           res = read(fd, buf, 1);
           if(res == -1) {
@@ -40,7 +44,7 @@ int llopen(int port, int role)
     }
     else if(role == SENDER)
     {
-        char[5] set = create_trama(role, SET);
+        char set[5] = create_trama(role, SET);
         if(write(fd, set, 5) == -1)
         {
             printf("Something went wrong while writing\n");

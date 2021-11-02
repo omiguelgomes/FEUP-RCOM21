@@ -1,3 +1,4 @@
+#include "utils.h"
 char[5] create_trama(int role, int tramaType)
 {
     char[5] return_trama;
