@@ -113,19 +113,22 @@ int main(int argc, char** argv)
 
     while(!STOP)
     {
-        if(read(fd, buf, 1) == -1)
+        res = read(fd, buf, 1);
+        if(res == -1)
         {
             printf("Error reading, for i = %i\n", i);
             STOP = TRUE;
         }
-        printf("Received:  %s\n", buf[0]);
-        str[i] = buf[0];
-        if ((buf[0] == '\0') || (i == 254))
+        else if(res > 0)
         {
-            STOP = TRUE;
-            printf("im leaving\n");
+            str[i] = buf[0];
+            if ((buf[0] == '\0') || (i == 254))
+            {
+                STOP = TRUE;
+                printf("im leaving\n");
+            }
+            i++;
         }
-        i++;
     }
 
     printf("Received the string back: %s\n", str);
