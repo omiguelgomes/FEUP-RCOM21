@@ -72,14 +72,16 @@ int main(int argc, char** argv)
 
     int i = 0;
     while (STOP == FALSE) {       /* loop for input */
-      if(read(fd,buf,1) == -1) {
+      res = read(fd, buf, 1);
+      if(res == -1) {
         STOP = TRUE;
         break;
       }
-      if( i == 0) printf("1: %s\n", buf[0]);
-      str[i] = buf[0];
-      if (buf[0]=='\0' || i == 254) STOP=TRUE;
-      i++;
+      else if(res > 0){
+        str[i] = buf[0];
+        if (buf[0]=='\0' || i == 254) STOP=TRUE;
+        i++;
+      }
     }
     printf("String: %s\n", str);
 
