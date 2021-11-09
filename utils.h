@@ -10,6 +10,6 @@
 #define RR 3
 #define REJ 4
 
-void create_trama(int role, int tramaType, char *set);
+void create_frame(int role, int tramaType, char *set);
 
 #endif

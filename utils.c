@@ -1,6 +1,6 @@
 #include "utils.h"
 
-void create_trama(int role, int tramaType, char *set)
+void create_frame(int role, int tramaType, char *set)
 {
     set[0] = FLAG;
     //comands sent by sender, or returns by receiver
