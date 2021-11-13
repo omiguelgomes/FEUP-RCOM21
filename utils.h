@@ -10,6 +10,14 @@
 #define RR 3
 #define REJ 4
 
-void create_frame(int role, int tramaType, char *set);
+void create_frame(int role, int tramaType, unsigned char *set);
+
+int create_information_frame(unsigned char* frame, unsigned char control, unsigned char* data, int dataLength);
+
+int send_frame(unsigned char *frame, int fd, int length);
+
+int receive_frame(int fd, int type);
+
+int parseFile(char* fileName, unsigned char* buf);
 
 #endif

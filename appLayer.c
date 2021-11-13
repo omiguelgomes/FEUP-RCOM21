@@ -1,18 +1,18 @@
-#include <stdio.h>
 #include <fcntl.h>
 #include <termios.h>
 #include "utils.h"
 #include "appLayer.h"
 #include "stateMachine.h"
 
-//int alarm
+unsigned char control = '0';
+
+extern int resend, conta;
 
 int llopen(char* port, int role)
 {
     struct termios oldtio, newtio;
 
     //OPEN PORT
-
     int fd = open(port, O_RDWR | O_NOCTTY);
 
     if (fd < 0) {
@@ -20,7 +20,7 @@ int llopen(char* port, int role)
       exit(-1);
     }
 
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
+    if (tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
       perror("tcgetattr");
       exit(-1);
     }
@@ -33,13 +33,13 @@ int llopen(char* port, int role)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME]    = 1;   /* inter-character timer unused */
+    newtio.c_cc[VTIME]    = 1;   /* inter-character timer */
     newtio.c_cc[VMIN]     = 0;   /* blocking read until 5 chars received */
     
     /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
     leitura do(s) proximo(s) caracter(es)
-  */
+    */
 
     tcflush(fd, TCIOFLUSH);
 
@@ -50,143 +50,74 @@ int llopen(char* port, int role)
 
     if(role == RECEIVER)
     {
-      states state = START;   
-      int res;
-      char buf[255];
-
       //RECEIVE SET
-      while (state != STOP) {
-        res = read(fd, buf, 1);
-        if(res == -1) {
-          printf("Error while reading SET\n");
-          exit(-1);
-        }
-        else if(res > 0){
-          state_machine(buf[0], &state, SET);
-        }
-      }
-
-      printf("AFTER-RECEIVE-SET\n");
+      receive_frame(fd, SET);
 
       //SEND UA
       unsigned char ua[5];
       create_frame(role, UA, ua);
-      if(write(fd, ua, 5) == -1)
-      {
-          printf("Something went wrong while writing UA\n");
-          exit(-1);
-      }
-
+      send_frame(ua, fd, 5);
     }
     else if(role == SENDER)
     {
+      setupAlarm();
+
       //SEND SET
       unsigned char set[5];
       create_frame(role, SET, set);
-      if(write(fd, set, 5) == -1)
-      {
-          printf("Something went wrong while writing SET\n");
-          exit(-1);
-      }
-
-      printf("AFTER-SENT-SET\n");
+      send_frame(set, fd, 5);
 
       //RECEIVE UA
-      states state = START;
-      int res;
-      char buf[255];
-      while (state != STOP) {
-        printf("state: %d\n", state);
-        res = read(fd, buf, 1);
-        if(res == -1) {
-          printf("Error while reading UA\n");
-          exit(-1);
-        }
-        else if(res > 0){
-          state_machine(buf[0], &state, UA);
-        }
-      }
-      printf("received UA\n");  
+      receive_frame(fd, UA);
+
+      turnOffAlarm();
     }
 
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-
     return fd;
+}
+
+int llwrite(int fd, char * buffer, int length)
+{
+  int total = length + 6;
+  unsigned char* frame[total];
+  if (create_information_frame(frame, control, buffer, length) != 0){
+    perror("Error in creating information frame.");
+    exit(-1);
+  }
+  send_frame(frame, fd, total);
+  return total;
 }
 
 int llclose(int fd, int role){
   if(role == RECEIVER)
   {
-      states state = START;
-      int res;
-      char buf[255];
-      //RECEIVE DISC
-      while (state != STOP) {
-          res = read(fd, buf, 1);
-          if(res == -1) {
-            printf("Error while reading\n");
-            exit(-1);
-          }
-          else if(res > 0){
-            state_machine(buf[0], &state, DISC);
-          }
-        }
+    //RECEIVE DISC
+    receive_frame(fd, DISC);
 
-      //SEND DISC
-      unsigned char disc[5];
-      create_frame(role, DISC, disc);
-      if(write(fd, disc, 5) == -1){
-          printf("Something went wrong while writing DISC\n");
-          exit(-1);
-      }
+    //SEND DISC
+    unsigned char disc[5];
+    create_frame(role, DISC, disc);
+    send_frame(disc, fd, 5);
 
-      state = START;
-      //RECEIVE UA
-      while (state != STOP) {
-          res = read(fd, buf, 1);
-          if(res == -1) {
-            printf("Error while reading\n");
-            exit(-1);
-          }
-          else if(res > 0){
-            state_machine(buf[0], &state, UA);
-          }
-        }
-
+    //RECEIVE UA
+    receive_frame(fd, UA);
   }
   else if(role == SENDER)
   {
     //SEND DISC
     unsigned char disc[5];
     create_frame(role, DISC, disc);
-    if(write(fd, disc, 5) == -1){
-        printf("Something went wrong while writing DISC\n");
-        exit(-1);
-    }
+    send_frame(disc, fd, 5);
 
-    states state = START;
-    int res;
-    char buf[255];
     //RECEIVE DISC
-    while (state != STOP) {
-        res = read(fd, buf, 1);
-        if(res == -1) {
-          printf("Error while reading\n");
-          exit(-1);
-        }
-        else if(res > 0){
-          state_machine(buf[0], &state, DISC);
-        }
-      }
+    receive_frame(fd, DISC) != 0;
 
-      //SEND UA
-      unsigned char ua[5];
-      create_frame(role, UA, ua);
-      if(write(fd, ua, 5) == -1)
-      {
-          printf("Something went wrong while writing UA\n");
-          exit(-1);
-      }
+    //SEND UA
+    unsigned char ua[5];
+    create_frame(role, UA, ua);
+    send_frame(ua, fd, 5);
   }
+
+  /*tcsetattr(fd,TCSANOW,&oldtio);*/
+  close(fd);
 }
