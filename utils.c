@@ -1,7 +1,10 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "utils.h"
 #include "alarme.h"
 #include "stateMachine.h"
-#include <stdio.h>
+
 
 void create_frame(int role, int tramaType, unsigned char *set)
 {

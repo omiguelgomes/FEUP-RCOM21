@@ -1,7 +1,12 @@
 #include <fcntl.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <strings.h>
+#include <unistd.h>
 #include "utils.h"
 #include "appLayer.h"
+#include "alarme.h"
 #include "stateMachine.h"
 
 unsigned char control = '0';
@@ -47,6 +52,7 @@ int llopen(char* port, int role)
       perror("tcsetattr");
       exit(-1);
     }
+
 
     if(role == RECEIVER)
     {
@@ -120,4 +126,5 @@ int llclose(int fd, int role){
 
   /*tcsetattr(fd,TCSANOW,&oldtio);*/
   close(fd);
+  return 0;
 }

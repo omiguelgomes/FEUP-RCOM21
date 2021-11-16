@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "alarme.h"
 
 int flag=1, conta=1, maxTries = 3, resend = 0;
