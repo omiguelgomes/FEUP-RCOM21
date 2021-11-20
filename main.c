@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <termios.h>
 #include "appLayer.h"
-
+#include "alarme.h"
 
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
@@ -19,18 +19,17 @@ volatile int STOP=FALSE;
 int main(int argc, char** argv)
 {
   int fd, c, res, type, tramaSize;
-  unsigned char *buf;
-  char *fileName[255];
+  unsigned char buf[65536];
 
-  // if ( (argc < 5) || 
-  //     ((strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS1", argv[1])!=0) && (strcmp("/dev/ttyS10", argv[1])!=0) && (strcmp("/dev/ttyS11", argv[1])!=0)) || 
+
+  // if ( (argc < 5) ||
+  //     ((strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS1", argv[1])!=0) && (strcmp("/dev/ttyS10", argv[1])!=0) && (strcmp("/dev/ttyS11", argv[1])!=0)) ||
   //     ((argv[2] != 0) && (argv[2] != 1))){
   //         printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
   //         exit(1);
   // }
   type = atoi(argv[2]);
   tramaSize = atoi(argv[3]);
-  *fileName = argv[4];
 
   /*
     Open serial port device for reading and writing and not as controlling tty
@@ -43,12 +42,21 @@ int main(int argc, char** argv)
       exit(1);
   }*/
 
+  setupAlarm();
+
   fd = llopen(argv[1], type);
-  printf("After llopen()\n");
 
-  //parseFile(fileName, buf);
-
-  llwrite(fd, buf, tramaSize);
+  /*
+  if(type == RECEIVER)
+  {
+    llread();
+    saveFile(buf);
+  }
+  else if(type == SENDER)
+  {
+    int fileSize = parseFile(argv[4], buf);
+    llwrite(fd, buf, fileSize);
+  }*/
 
   llclose(fd, type);
 

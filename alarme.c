@@ -4,34 +4,38 @@
 #include <stdlib.h>
 #include "alarme.h"
 
-int flag=1, conta=1, maxTries = 3, resend = 0;
+int flag = 0, conta = 1;
+int maxTries, timeout;
 
 void atende()                   // atende alarme
 {
+   flag = 1;
 	printf("alarme # %d\n", conta);
-	flag = 1;
 	conta++;
-   resend = 1;
+   if(conta > maxTries)
+   {
+      printf("Maximum attempts reached, aborting connection\n");
+      exit(-1);
+   }
+   turnOnAlarm(maxTries, timeout);
 }
 
-
-int setupAlarm()
+void setupAlarm()
 {
    (void) signal(SIGALRM, atende);  // instala  rotina que atende interrupcao
+}
 
-   while(conta < 4){
-      if(flag){
-         alarm(3);                 // activa alarme de 3s
-         flag=0;
-      }
-   }
-   printf("Maximum attempts reached, will now shut down\n");
-   exit(0);
+void turnOnAlarm(int newMaxTries, int newTimeout)
+{
+   maxTries = newMaxTries;
+   timeout = newTimeout;
+   alarm(timeout);
 }
 
 void turnOffAlarm()
 {
    flag = 0;
    conta = 1;
+   alarm(0);
    return;
 }

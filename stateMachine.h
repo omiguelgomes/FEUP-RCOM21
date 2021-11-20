@@ -10,7 +10,7 @@ typedef enum {
     STOP} states;
 
 
-void state_machine(char byte, states *state, int type);
+int state_machine(char byte, states *state, int type);
 void ack_state_machine(char byte, states *state, int type, int parity);
 
 #endif

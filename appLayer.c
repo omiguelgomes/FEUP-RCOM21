@@ -9,12 +9,13 @@
 #include "alarme.h"
 #include "stateMachine.h"
 
-unsigned char control = '0';
+int s = 0;
 
-extern int resend, conta;
+extern int flag;
 
 int llopen(char* port, int role)
 {
+    int res;
     struct termios oldtio, newtio;
 
     //OPEN PORT
@@ -66,15 +67,30 @@ int llopen(char* port, int role)
     }
     else if(role == SENDER)
     {
-      setupAlarm();
+      turnOnAlarm(3, 3);
 
       //SEND SET
       unsigned char set[5];
       create_frame(role, SET, set);
       send_frame(set, fd, 5);
 
+      printf("A\n");
+
       //RECEIVE UA
-      receive_frame(fd, UA);
+      res = receive_frame(fd, UA);
+
+      printf("F\n");
+
+      //If nothing is received, resend set, and try to receive UA again
+      if(res == 1){
+        while(flag == 1)
+          { 
+            send_frame(set, fd, 5);
+            printf("123\n");
+            if (receive_frame(fd, UA) == 0) break;
+          }
+      }
+      
 
       turnOffAlarm();
     }
@@ -86,12 +102,36 @@ int llwrite(int fd, char * buffer, int length)
 {
   int total = length + 6;
   unsigned char* frame[total];
-  if (create_information_frame(frame, control, buffer, length) != 0){
+  if (create_information_frame(frame, INFO_CONTROL_BYTE(s), buffer, length) != 0){
     perror("Error in creating information frame.");
     exit(-1);
   }
+  
+  int ack;
+  turnOnAlarm(3, 3);
+
   send_frame(frame, fd, total);
+  do {
+    send_frame(frame, fd, total);
+
+    while(flag == 1) {
+      send_frame(frame, fd, total);
+      
+    }
+
+    ack = receive_ack(fd);
+  } while (ack != RR);
+
+  turnOffAlarm();
+  s = 1 - s;
   return total;
+}
+
+//TODO: sair com erro
+//state machine
+int llread(int fd, char * buffer)
+{
+  
 }
 
 int llclose(int fd, int role){
@@ -100,6 +140,8 @@ int llclose(int fd, int role){
     //RECEIVE DISC
     receive_frame(fd, DISC);
 
+    turnOnAlarm(3, 3);
+
     //SEND DISC
     unsigned char disc[5];
     create_frame(role, DISC, disc);
@@ -107,6 +149,16 @@ int llclose(int fd, int role){
 
     //RECEIVE UA
     receive_frame(fd, UA);
+
+    //If nothing is received, resend disc, and try to receive UA again
+    while(flag == 1)
+    { 
+      send_frame(disc, fd, 5);
+      receive_frame(fd, UA);
+    }
+
+    turnOffAlarm();
+
   }
   else if(role == SENDER)
   {
@@ -115,8 +167,19 @@ int llclose(int fd, int role){
     create_frame(role, DISC, disc);
     send_frame(disc, fd, 5);
 
+    turnOnAlarm(3, 3);
+
     //RECEIVE DISC
-    receive_frame(fd, DISC) != 0;
+    receive_frame(fd, DISC);
+
+    //If nothing is received, resend set, and try to receive UA again
+    while(flag == 1)
+    { 
+      send_frame(disc, fd, 5);
+      receive_frame(fd, DISC);
+    }
+
+    turnOffAlarm();
 
     //SEND UA
     unsigned char ua[5];
