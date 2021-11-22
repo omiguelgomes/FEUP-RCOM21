@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
+#include <time.h>
 #include "appLayer.h"
 #include "alarme.h"
 
@@ -46,6 +47,9 @@ int main(int argc, char** argv)
 
   fd = llopen(argv[1], type);
 
+  clock_t t;
+  t = clock();
+
   /*
   if(type == RECEIVER)
   {
@@ -58,7 +62,15 @@ int main(int argc, char** argv)
     llwrite(fd, buf, fileSize);
   }*/
 
+  t = clock() - t;
+
   llclose(fd, type);
+
+  double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+  printf("Transfer took %f seconds to execute \n", time_taken);
 
   return 0;
 }
+
+
+//socat -d -d pty,link=/tmp/tty-RC-port1,raw,echo=0 pty,link=/tmp/tty-RC-port2,raw,echo=0
