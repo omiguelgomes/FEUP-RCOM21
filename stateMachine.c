@@ -16,28 +16,14 @@ int state_machine(char byte, states *state, int type)
             break;
         
         case FLAG_RCV:
-        {
-            byte1 = byte;
-            switch (type)
+            byte1 = byte; 
+            if(byte1 == 0x03 || byte1 == 0x01)
             {
-            case INFORMATION:
-                if(byte == 0x03){
-                    *state = A_RCV;
-                    return 0;
-                }
-                break;
-            
-            default:
-                if(byte1 == 0x03 || byte1 == 0x01)
-                {
-                    *state = A_RCV;
-                    return 0;
-                }
-                break;
+                *state = A_RCV;
+                return 0;
             }
-            
             break;
-        }
+
         case A_RCV:
         {
             byte2 = byte;
@@ -51,9 +37,6 @@ int state_machine(char byte, states *state, int type)
                     break;
                 case UA:
                     byte_expected = 0x07;
-                    break;
-                case INFORMATION:
-                    byte_expected = byte_wanted();
                     break;
             }
             if(byte2 == byte_expected){

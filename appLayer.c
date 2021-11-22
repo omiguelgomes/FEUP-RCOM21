@@ -9,7 +9,7 @@
 #include "alarme.h"
 #include "stateMachine.h"
 
-int s = 0;
+//int s = 0;
 
 extern int flag;
 
@@ -74,12 +74,8 @@ int llopen(char* port, int role)
       create_frame(role, SET, set);
       send_frame(set, fd, 5);
 
-      printf("A\n");
-
       //RECEIVE UA
       res = receive_frame(fd, UA);
-
-      printf("F\n");
 
       //If nothing is received, resend set, and try to receive UA again
       if(res == 1){
@@ -98,9 +94,9 @@ int llopen(char* port, int role)
     return fd;
 }
 
-int llwrite(int fd, char * buffer, int length)
+int llwrite(int fd, char* buffer, int length)
 {
-  int total = length + 6;
+  /*int total = length + 6;
   unsigned char* frame[total];
   if (create_information_frame(frame, INFO_CONTROL_BYTE(s), buffer, length) != 0){
     perror("Error in creating information frame.");
@@ -124,14 +120,13 @@ int llwrite(int fd, char * buffer, int length)
 
   turnOffAlarm();
   s = 1 - s;
-  return total;
+  return total;*/
+  return send_information_frame(fd, buffer, length);
 }
 
-//TODO: sair com erro
-//state machine
-int llread(int fd, char * buffer)
+int llread(int fd, char* buffer)
 {
-  
+  return receive_information_frame(fd, buffer);
 }
 
 int llclose(int fd, int role){

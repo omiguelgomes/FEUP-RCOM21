@@ -9,5 +9,6 @@
 int llopen(char* port, int role);
 int llclose(int fd, int role);
 int llwrite(int fd, char * buffer, int length);
+int llread(int fd, char* buffer);
 
 #endif
