@@ -40,54 +40,57 @@ void create_frame(int role, int tramaType, unsigned char *set)
             set[2] = REJ_CONTROL_BYTE(r);
             break;
     }
-    set[3] = set[1] ^ set[2];
+    set[3] = (set[1] ^ set[2]);
     set[4] = FLAG;
 }
 
-char create_BCC2(char* data, int dataLength){
+unsigned char create_BCC2(unsigned char* data, int dataLength){
     unsigned char BCC2 = data[0];
 
     for(int i = 1; i < dataLength; i++){
-        BCC2 = BCC2 ^ data[i];
+        BCC2 = (BCC2 ^ data[i]);
     }
 
     return BCC2;
 }
 
-int create_information_frame(unsigned char* frame, unsigned char control, unsigned char* data, int dataLength){
-    frame = malloc(dataLength);
-
-    frame[0] = FLAG;
-    frame[1] = 0x03;
-    frame[2] = control;
-    frame[3] = frame[1] ^ frame[2];
-
+int create_information_frame(unsigned char *frame, unsigned char control, unsigned char* data, int dataLength){
     unsigned char BCC2 = create_BCC2(data, dataLength);
 
     int stuffedSize;
     unsigned char* stuffedData;
     stuffedSize = stuffing(data, dataLength, stuffedData);
-    realloc(frame, stuffedSize);
+    
+    
+    frame = malloc(stuffedSize + 5);
 
-    for(int i = 0; i < stuffedSize; i++){
-        frame[4 + i] = stuffedData[i];
-    }
+    frame[0] = FLAG;
+    frame[1] = 0x03;
+    frame[2] = control;
+    frame[3] = (frame[1] ^ frame[2]);
+
+    memcpy(frame + 4, stuffedData, stuffedSize);
     
     frame[stuffedSize + 4] = BCC2;
     frame[stuffedSize + 5] = FLAG;
 
-    return 0;
+    for (int i = 0; i <= stuffedSize + 5; i++){
+        printf("CREATE_FRAME: %x\n", frame[i]);
+    }
+
+    return stuffedSize + 5;
 }
 
 int send_frame(unsigned char *frame, int fd, int length)
-{
-    /*for (int i = 0; i < length; i++){
+{   
+    for (int i = 0; i < length; i++){
+        write(fd, frame + i, 1);
         printf("SEND_FRAME: %x\n", frame[i]);
-    }*/
-    if(write(fd, frame, length) == -1){
+    }
+    /*if(write(fd, frame, length) == -1){
         perror("Error sending frame");
         exit(-1);
-    }
+    }*/
     return 0;
 }
 
@@ -95,7 +98,7 @@ int receive_frame(int fd, int type)
 {
     states state = START;   
     int res;
-    char buf[5];
+    unsigned char buf[5];
 
     while (state != STOP) {
         res = read(fd, buf, 1);
@@ -111,7 +114,7 @@ int receive_frame(int fd, int type)
     return 0;
 }
 
-int parseFile(char* fileName, unsigned char* buf)
+int parseFile(unsigned char* fileName, unsigned char* buf)
 {
     FILE *fp;
     long lSize;
@@ -124,33 +127,36 @@ int parseFile(char* fileName, unsigned char* buf)
     rewind(fp);
 
     buf = malloc(lSize);
-    fread(buf, sizeof(char), lSize, fp);
+    fread(buf, sizeof(unsigned char), lSize, fp);
 
     fclose(fp);
     return lSize;
 }
 
-int stuffing(char *buf, int size, char *stuffed)
+int stuffing(unsigned char *buf, int size, unsigned char *stuffed)
 {
     int stuffedIndex = 0;
 
     for(int i = 0; i < size; i++, stuffedIndex++)
     {
-        if(buf[i] == 0x7e)
+        switch(buf[i])
         {
-            stuffed[stuffedIndex] = 0x7d;
-            stuffed[++stuffedIndex] = 0x5e;
-        }    
-        else if(buf[i] == 0x7d)
-        {
-            stuffed[stuffedIndex] = 0x7d;
-            stuffed[++stuffedIndex] = 0x5d;
+            case(0x7e): 
+                stuffed[stuffedIndex] = 0x7d;
+                stuffed[++stuffedIndex] = 0x5e;
+                break;
+            case(0x7d):
+                stuffed[stuffedIndex] = 0x7d;
+                stuffed[++stuffedIndex] = 0x5d;
+                break;
+            default:
+                stuffed[stuffedIndex] = buf[i];
         }
     }
     return stuffedIndex;
 }
 
-int destuffing(char* buf, int size, char* destuffed)
+int destuffing(unsigned char* buf, int size, unsigned char* destuffed)
 {
     int destuffedIndex = 0;
 
@@ -166,6 +172,7 @@ int destuffing(char* buf, int size, char* destuffed)
             destuffed[destuffedIndex] = 0x7d;
             i++;
         }
+        else destuffed[destuffedIndex] = buf[i];
     }
     return destuffedIndex;
 }
@@ -179,7 +186,7 @@ int send_data(int fd, long file_size, unsigned char* file)
         }
         else data_size = DATA_SIZE;
 
-        char* data = malloc(data_size);
+        unsigned char* data = malloc(data_size);
         memcpy(data, file + i, data_size);
 
         int packet_size = data_size + 4;
@@ -199,7 +206,7 @@ int send_data(int fd, long file_size, unsigned char* file)
     return 0;
 }
 
-void create_data_packet(char* data, int data_size, char* packet, int packet_size, int sequence_number){
+void create_data_packet(unsigned char* data, int data_size, unsigned char* packet, int packet_size, int sequence_number){
     packet[0] = C_DATA;
     packet[1] = sequence_number;
     packet[2] = data_size / 256;
@@ -207,10 +214,10 @@ void create_data_packet(char* data, int data_size, char* packet, int packet_size
     memcpy(packet + 4, data, packet_size);
 }
 
-int receive_information_frame(int fd, char* buffer){
+int receive_information_frame(int fd, unsigned char* buffer){
     states state = START;
     int res, repeated, data_index, data_size;
-    char buf[1], byte1, byte2, stuffed_data[DATA_SIZE], calculated_BCC2, received_BCC2, frame[5];
+    unsigned char buf[1], byte1, byte2, stuffed_data[DATA_SIZE], calculated_BCC2, received_BCC2, frame[5];
 
     while(state != STOP){
         res = read(fd, buf, 1);
@@ -219,6 +226,7 @@ int receive_information_frame(int fd, char* buffer){
             exit(-1);
         }
         else if (res > 0){
+            printf("READ: %x\n", buf[0]);
             switch (state)
             {
             case START:
@@ -247,7 +255,7 @@ int receive_information_frame(int fd, char* buffer){
                 break;
 
             case C_RCV:
-                if(buf[0] == byte1 ^ byte2){
+                if(buf[0] == (byte1 ^ byte2)){
                     state = BCC_OK;
                     data_index = 0;
                 }
@@ -257,17 +265,23 @@ int receive_information_frame(int fd, char* buffer){
             case BCC_OK:
                 if(data_index > DATA_SIZE) state = START;
                 else if (buf[0] == FLAG){
-                    data_size = destuffing(stuffed_data, data_index, buffer);
-                    received_BCC2 = buffer[data_size];
+                    //fazer malloc para o buffer
+                    //for(int i = 0; i <)
+                    data_size = destuffing(stuffed_data, data_index - 1, buffer);
+                    received_BCC2 = stuffed_data[data_index-1];
                     calculated_BCC2 = create_BCC2(buffer, data_size);
+                    printf("CALCULATED: %x\n", calculated_BCC2);
+                    printf("RECEIVED: %x\n", received_BCC2);
 
                     if(repeated){
-                        create_frame(1, RR, frame);
+                        printf("REPEATED\n");
+                        create_frame(0, RR, frame);
                         send_frame(frame, fd, 5);
                         state = START;
                     }
                     else if (received_BCC2 != calculated_BCC2){
-                        create_frame(1, REJ, frame);
+                        printf("WRONG BCC2\n");
+                        create_frame(0, REJ, frame);
                         send_frame(frame, fd, 5);
                         state = START;
                     }
@@ -278,28 +292,57 @@ int receive_information_frame(int fd, char* buffer){
             }
         }
     }
-    create_frame(1, RR, frame);
+    create_frame(0, RR, frame);
+    for(int i = 0; i < 5; i++)
+    {
+        printf("rr: %x\n", frame[i]);
+    }
+
     send_frame(frame, fd, 5);
     r = 1 - r;
     return data_size;
 }
 
-int send_information_frame(int fd, char* buffer, int length){
+int send_information_frame(int fd, unsigned char* buffer, int length){
     if(length > DATA_SIZE){
         perror("Cannot send data that big\n");
         exit(-1);
     }
+    // CREATE FRAME
 
-    int total = length + 6;
-    unsigned char* frame = malloc(total);
-    if (create_information_frame(frame, INFO_CONTROL_BYTE(s), buffer, length) != 0){
-        perror("Error in creating information frame.");
-        exit(-1);
-    }
+    printf("SIF_0\n");
+
+    unsigned char BCC2 = create_BCC2(buffer, length);
+
+    unsigned char* stuffedData = malloc(2 * length);
+    int stuffedSize = stuffing(buffer, length, stuffedData);
+    
+    unsigned char *frame = malloc(stuffedSize + 5);
+
+    frame[0] = FLAG;
+    frame[1] = 0x03;
+    frame[2] = INFO_CONTROL_BYTE(s);
+    frame[3] = (frame[1] ^ frame[2]);
+
+    memcpy(frame + 4, stuffedData, stuffedSize);
+    
+    frame[stuffedSize + 4] = BCC2;
+    frame[stuffedSize + 5] = FLAG;
+
+    int total = stuffedSize + 6;
+
+    /*
+    for (int i = 0; i < total; i++){
+        printf("CREATE_FRAME: %x\n", frame[i]);
+    }*/
 
     send_frame(frame, fd, total);
 
+    printf("SIF_1\n");
+
     //FALTA RECEIVE_ACK
+    int ack = receive_ack(fd);
+    printf("ACK: %i", ack);
 
     s = 1 - s;
     free(frame);
@@ -318,21 +361,23 @@ int receive_ack(int fd){
             exit(-1);
         }
         else if(res > 0){
+            //printf("ACK_READ: %x", buf[0]);
             switch(state)
             {
                 case START:
                     if(buf[0] == FLAG) state = FLAG_RCV;
-                    else return 0;
                     break;
                 
                 case FLAG_RCV:
                     byte1 = buf[0];
                     if (byte1 == 0x03) state = A_RCV;
-                    else return 0;
+                    else if(byte1 == FLAG) continue;
+                    else state = START;
                     break;
                 case A_RCV:
                     byte2 = buf[0];
-                    if(byte2 && 0x05 == 0x05){
+                    if(byte2 == FLAG) state = FLAG_RCV;
+                    else if(byte2 && 0x05 == 0x05){
                         ack = RR;
                         state = C_RCV;
                         break;
@@ -342,21 +387,22 @@ int receive_ack(int fd){
                         state = C_RCV;
                         break;
                     }
-                    else return 0;
+                    else state = START;
                     break;
                 case C_RCV:
-                    if(buf[0] == byte1 ^ byte2){
+                    if(buf[0] == FLAG) state = FLAG_RCV;
+                    else if(buf[0] == (byte1 ^ byte2)){
                         state = BCC_OK;
                         break;
                     }
-                    else return 0;
+                    else state = START;
                     break;
                 case BCC_OK:
                     if(buf[0] == FLAG){
                         state = STOP;
                         return ack;
                     }
-                    else return 0;
+                    else state = START;
                     break;  
             }
         }
@@ -364,7 +410,7 @@ int receive_ack(int fd){
     return 0;
 }
 
-int saveFile(char* buf)
+int saveFile(unsigned char* buf)
 {
     FILE *file = fopen("filename", "w");
 
@@ -375,16 +421,16 @@ int saveFile(char* buf)
     fclose(file);
 }
 
-int send_control_packet(int fd, char control_field, long file_size, char* file_name){
-    char* control;
+int send_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name){
+    unsigned char* control;
 
     control[0] = control_field;
     control[1] = T_SIZE;
-    control[2] = (char) sizeof(file_size);
     memcpy(control + 3, &file_size, sizeof(file_size));
+    control[2] = (unsigned char) sizeof(file_size);
 
     control[sizeof(file_size) + 3] = T_NAME;
-    control[sizeof(file_size) + 4] = (char) strlen(file_name);
+    control[sizeof(file_size) + 4] = (unsigned char) strlen(file_name);
     memcpy(control + sizeof(file_size) + 5, file_name, strlen(file_name));
 
     printf("SCP_2\n");
@@ -397,16 +443,20 @@ int send_control_packet(int fd, char control_field, long file_size, char* file_n
     return 0;
 }
 
-int read_control_packet(int fd, char control_field, long file_size, char* file_name){
-    char *control, type;
+int read_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name){
+    unsigned char *control, type;
     int size, idx = 1, length;
     
+    printf("RCP_1\n");
+
     size = llread(fd, control);
 
     if(control[0] != control_field){
         perror("Wrong control byte\n");
         exit(-1);
     }
+
+    printf("RCP_2\n");
 
     for(int i = 1; i < size;){
         type = control[i++];
@@ -417,6 +467,8 @@ int read_control_packet(int fd, char control_field, long file_size, char* file_n
 
         i += length;
     }
+
+    printf("RCP_3\n");
 
     return 0;
 }

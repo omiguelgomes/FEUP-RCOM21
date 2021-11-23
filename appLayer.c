@@ -94,7 +94,7 @@ int llopen(char* port, int role)
     return fd;
 }
 
-int llwrite(int fd, char* buffer, int length)
+int llwrite(int fd, unsigned char* buffer, int length)
 {
   /*int total = length + 6;
   unsigned char* frame[total];
@@ -124,7 +124,7 @@ int llwrite(int fd, char* buffer, int length)
   return send_information_frame(fd, buffer, length);
 }
 
-int llread(int fd, char* buffer)
+int llread(int fd, unsigned char* buffer)
 {
   return receive_information_frame(fd, buffer);
 }

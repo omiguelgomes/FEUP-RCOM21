@@ -2,7 +2,7 @@
 #include "utils.h"
 #include <stdio.h>
 
-int state_machine(char byte, states *state, int type)
+int state_machine(unsigned char byte, states *state, int type)
 {
     //save byte 1 and 2 to compare the xor in the end
     unsigned char byte1, byte2;
@@ -47,7 +47,7 @@ int state_machine(char byte, states *state, int type)
         }
         case C_RCV:
         {   
-            if(byte == byte1 ^ byte2){
+            if(byte == (byte1 ^ byte2)){
                 *state = BCC_OK;
                 return 0;
             }
@@ -65,7 +65,7 @@ int state_machine(char byte, states *state, int type)
 }
 
 
-void ack_state_machine(char byte, states *state, int type, int parity)
+void ack_state_machine(unsigned char byte, states *state, int type, int parity)
 {
     return;
 }

@@ -14,7 +14,7 @@
  * @param file_path File path
  * @return int 0 on success
  */
-int send_file(int fd, char* file_path);
+int send_file(int fd, unsigned char* file_path);
 
 /**
  * @brief Receives a file through the serial port

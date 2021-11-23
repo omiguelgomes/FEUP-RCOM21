@@ -72,8 +72,8 @@ int main(int argc, char** argv)
   return 0;
 }
 
-int send_file(int fd, char* file_path){
-  char* file;
+int send_file(int fd, unsigned char* file_path){
+  unsigned char* file;
   long file_size = parseFile(file_path, file);
 
   printf("SF_1\n");
@@ -95,7 +95,7 @@ int send_file(int fd, char* file_path){
 
 int receive_file(int fd){
   long file_size;
-  char *file_name, buffer[DATA_SIZE];
+  unsigned char *file_name, buffer[DATA_SIZE];
   FILE *file;
   int sequence_number = 0;
 
@@ -124,10 +124,10 @@ int receive_file(int fd){
     }
 
     int data_size = buffer[2] * 256 + buffer[3];
-    char* data = malloc(data_size);
+    unsigned char* data = malloc(data_size);
     memcpy(data, buffer + 4, data_size);
 
-    fwrite(data, sizeof(char) ,data_size, file);
+    fwrite(data, sizeof(unsigned char) ,data_size, file);
 
     sequence_number = (sequence_number + 1) % 256;
     free(data); 

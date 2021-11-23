@@ -34,7 +34,7 @@
  */
 void create_frame(int role, int tramaType, unsigned char *set);
 
-char create_BCC2(char* data, int dataLength);
+unsigned char create_BCC2(unsigned char* data, int dataLength);
 
 /**
  * @brief Create a information frame object
@@ -45,7 +45,7 @@ char create_BCC2(char* data, int dataLength);
  * @param dataLength Length of the data field
  * @return int 0 on success; exits with -1 on failure
  */
-int create_information_frame(unsigned char* frame, unsigned char control, unsigned char* data, int dataLength);
+int create_information_frame(unsigned char *frame, unsigned char control, unsigned char* data, int dataLength);
 
 /**
  * @brief Writes frame in the serial port
@@ -59,26 +59,26 @@ int send_frame(unsigned char *frame, int fd, int length);
 
 int receive_frame(int fd, int type);
 
-int receive_information_frame(int fd, char* buffer);
+int receive_information_frame(int fd, unsigned char* buffer);
 
-int send_information_frame(int fd, char* buffer, int length);
+int send_information_frame(int fd, unsigned char* buffer, int length);
 
-int parseFile(char* fileName, unsigned char* buf);
+int parseFile(unsigned char* fileName, unsigned char* buf);
 
-int saveFile(char* buf);
+int saveFile(unsigned char* buf);
 
-int stuffing(char* buf, int size, char* stuffed);
+int stuffing(unsigned char* buf, int size, unsigned char* stuffed);
 
-int destuffing(char* buf, int size, char* destuffed);
+int destuffing(unsigned char* buf, int size, unsigned char* destuffed);
 
 int send_data(int fd, long file_size, unsigned char* file);
 
-void create_data_packet(char* data, int data_size, char* packet, int packet_size, int sequence_number);
+void create_data_packet(unsigned char* data, int data_size, unsigned char* packet, int packet_size, int sequence_number);
 
 int receive_ack(int fd);
 
-int send_control_packet(int fd, char control_field, long file_size, char* file_name);
+int send_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name);
 
-int read_control_packet(int fd, char control_field, long file_size, char* file_name);
+int read_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name);
 
 #endif
