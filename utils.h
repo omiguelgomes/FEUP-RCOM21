@@ -17,7 +17,7 @@
 #define RR_CONTROL_BYTE(r) (BIT(7*(r)) | 0x05)
 #define REJ_CONTROL_BYTE(r) (BIT(7*(r)) | 0x01)
 
-#define DATA_SIZE 256
+#define DATA_SIZE 65536
 
 #define C_DATA 0x01
 #define C_START 0x02
@@ -69,7 +69,7 @@ int saveFile(unsigned char* buf);
 
 int stuffing(unsigned char* buf, int size, unsigned char* stuffed);
 
-int destuffing(unsigned char* buf, int size, unsigned char* destuffed);
+int destuffing(unsigned char* buf, int size, unsigned char *destuffed);
 
 int send_data(int fd, long file_size, unsigned char* file);
 

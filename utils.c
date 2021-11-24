@@ -48,6 +48,7 @@ unsigned char create_BCC2(unsigned char* data, int dataLength){
     unsigned char BCC2 = data[0];
 
     for(int i = 1; i < dataLength; i++){
+        printf("index: %d\n", i);
         BCC2 = (BCC2 ^ data[i]);
     }
 
@@ -107,7 +108,6 @@ int receive_frame(int fd, int type)
             exit(-1);
         }
         else if(res > 0){
-            //printf("RECEIVED_FRAME: %x\n", buf[0]);
             if (state_machine(buf[0], &state, type) == -1) return 1;
         }
     }
@@ -156,8 +156,9 @@ int stuffing(unsigned char *buf, int size, unsigned char *stuffed)
     return stuffedIndex;
 }
 
-int destuffing(unsigned char* buf, int size, unsigned char* destuffed)
+int destuffing(unsigned char* buf, int size, unsigned char *destuffed)
 {
+    destuffed = malloc(size*2);
     int destuffedIndex = 0;
 
     for(int i = 0; i < size; i++, destuffedIndex++)
@@ -172,7 +173,9 @@ int destuffing(unsigned char* buf, int size, unsigned char* destuffed)
             destuffed[destuffedIndex] = 0x7d;
             i++;
         }
-        else destuffed[destuffedIndex] = buf[i];
+        else {
+            destuffed[destuffedIndex] = buf[i];
+        }
     }
     return destuffedIndex;
 }
@@ -216,7 +219,7 @@ void create_data_packet(unsigned char* data, int data_size, unsigned char* packe
 
 int receive_information_frame(int fd, unsigned char* buffer){
     states state = START;
-    int res, repeated, data_index, data_size;
+    int res, repeated, data_index = 0, data_size = 0;
     unsigned char buf[1], byte1, byte2, stuffed_data[DATA_SIZE], calculated_BCC2, received_BCC2, frame[5];
 
     while(state != STOP){
@@ -226,7 +229,7 @@ int receive_information_frame(int fd, unsigned char* buffer){
             exit(-1);
         }
         else if (res > 0){
-            printf("READ: %x\n", buf[0]);
+            printf("READ: %x\n", buf[0]);   
             switch (state)
             {
             case START:
@@ -262,11 +265,11 @@ int receive_information_frame(int fd, unsigned char* buffer){
                 else if (buf[0] == FLAG) state = FLAG_RCV;
                 else state = START;
 
+            //if bcc_ok, the data packets will start to arrive
             case BCC_OK:
                 if(data_index > DATA_SIZE) state = START;
+                //when we get the last byte
                 else if (buf[0] == FLAG){
-                    //fazer malloc para o buffer
-                    //for(int i = 0; i <)
                     data_size = destuffing(stuffed_data, data_index - 1, buffer);
                     received_BCC2 = stuffed_data[data_index-1];
                     calculated_BCC2 = create_BCC2(buffer, data_size);
@@ -419,10 +422,11 @@ int saveFile(unsigned char* buf)
         // Failed to write do error code here.
     }
     fclose(file);
+    return 0;
 }
 
 int send_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name){
-    unsigned char* control;
+    unsigned char* control = malloc(5);
 
     control[0] = control_field;
     control[1] = T_SIZE;
