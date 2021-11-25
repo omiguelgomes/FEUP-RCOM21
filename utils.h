@@ -17,7 +17,7 @@
 #define RR_CONTROL_BYTE(r) (BIT(7*(r)) | 0x05)
 #define REJ_CONTROL_BYTE(r) (BIT(7*(r)) | 0x01)
 
-#define DATA_SIZE 65536
+#define DATA_SIZE 256
 
 #define C_DATA 0x01
 #define C_START 0x02
@@ -67,7 +67,7 @@ int parseFile(unsigned char* fileName, unsigned char* buf);
 
 int saveFile(unsigned char* buf);
 
-int stuffing(unsigned char* buf, int size, unsigned char* stuffed);
+int stuffing(unsigned char* buf, int size, unsigned char BCC2, unsigned char* stuffed);
 
 int destuffing(unsigned char* buf, int size, unsigned char *destuffed);
 
@@ -79,6 +79,6 @@ int receive_ack(int fd);
 
 int send_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name);
 
-int read_control_packet(int fd, unsigned char control_field, long file_size, unsigned char* file_name);
+int read_control_packet(int fd, unsigned char control_field, long* file_size, unsigned char** file_name);
 
 #endif
