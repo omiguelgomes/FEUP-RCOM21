@@ -272,7 +272,7 @@ int receive_information_frame(int fd, unsigned char* buffer){
                 else if (buf[0] == FLAG){
                     data_size = destuffing(stuffed_data, data_index - 1, buffer);
                     received_BCC2 = stuffed_data[data_index-1];
-                    calculated_BCC2 = create_BCC2(buffer, data_size);
+                        calculated_BCC2 = create_BCC2(buffer, data_size);
                     printf("CALCULATED: %x\n", calculated_BCC2);
                     printf("RECEIVED: %x\n", received_BCC2);
 
