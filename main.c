@@ -95,15 +95,18 @@ int send_file(int fd, unsigned char* file_path){
 
 int receive_file(int fd){
   long file_size;
-  unsigned char *file_name, buffer[DATA_SIZE];
+  unsigned char *file_name;
+  unsigned char *buffer = malloc(2*DATA_SIZE);
   FILE *file;
   int sequence_number = 0;
 
   printf("RF_1\n");
 
-  read_control_packet(fd, C_START, file_size, file_name);
+  read_control_packet(fd, C_START, &file_size, &file_name);
 
   printf("RF_2\n");
+
+  file_name[0] = 'a';
 
   if((file = fopen(file_name, "w")) == NULL){
       perror("Error creating file");
@@ -124,10 +127,11 @@ int receive_file(int fd){
     }
 
     int data_size = buffer[2] * 256 + buffer[3];
+    printf("data_size: %i\n", data_size);
     unsigned char* data = malloc(data_size);
     memcpy(data, buffer + 4, data_size);
 
-    fwrite(data, sizeof(unsigned char) ,data_size, file);
+    fwrite(data, sizeof(unsigned char), data_size, file);
 
     sequence_number = (sequence_number + 1) % 256;
     free(data); 
