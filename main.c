@@ -47,20 +47,14 @@ int main(int argc, char** argv)
   clock_t t;
   t = clock();
 
-  printf("MAIN 1\n");
-
   if(type == RECEIVER)
   {
-    printf("MAIN RECEIVER\n");
     receive_file(fd);
   }
   else if(type == SENDER)
   {
-    printf("MAIN SENDER\n");
     send_file(fd, argv[3]);
   }
-
-  printf("MAIN 2\n");
 
   t = clock() - t;
 
@@ -74,37 +68,36 @@ int main(int argc, char** argv)
 
 int send_file(int fd, unsigned char* file_path){
   unsigned char* file;
-  long file_size = parseFile(file_path, file);
+  FILE *ptr;
 
-  printf("SF_1\n");
+  long file_size;
+
+  ptr = fopen (file_path, "r");
+  if(!ptr) perror(file_path),exit(1);
+
+  fseek(ptr, 0, SEEK_END);
+  file_size = ftell(ptr) - 1;
+  rewind(ptr);
 
   send_control_packet(fd, C_START, file_size, file_path);
-  
-  printf("SF_2\n");
 
-  send_data(fd, file_size, file);
-
-  printf("SF_3\n");
+  send_data(fd, file_size, ptr);
 
   send_control_packet(fd, C_END, file_size, file_path);
-
-  printf("SF_4\n");
 
   return 0;
 }
 
 int receive_file(int fd){
   long file_size;
-  unsigned char *file_name;
-  unsigned char *buffer = malloc(2*DATA_SIZE);
+  unsigned char *file_name = NULL;
+  unsigned char buffer[2*DATA_SIZE];
   FILE *file;
   int sequence_number = 0;
 
-  printf("RF_1\n");
+  printf("N\n");
 
   read_control_packet(fd, C_START, &file_size, &file_name);
-
-  printf("RF_2\n");
 
   file_name[0] = 'a';
 
@@ -113,9 +106,7 @@ int receive_file(int fd){
       exit(-1);
   }
 
-  printf("RF_3\n");
-
-  while (llread(fd, buffer) > 0){
+  while (llread(fd, &buffer) > 0){
     if(buffer[0] == C_END) break;
     else if(buffer[0] != C_DATA){
       perror("Invalid control byte\n");
@@ -125,9 +116,8 @@ int receive_file(int fd){
       perror("Invalid sequence number\n");
       exit(-1);
     }
-
     int data_size = buffer[2] * 256 + buffer[3];
-    printf("data_size: %i\n", data_size);
+    
     unsigned char* data = malloc(data_size);
     memcpy(data, buffer + 4, data_size);
 
@@ -136,10 +126,7 @@ int receive_file(int fd){
     sequence_number = (sequence_number + 1) % 256;
     free(data); 
   }
-
   free(file_name);
   fclose(file);
   return 0;
 }
-
-//socat -d -d pty,link=/tmp/tty-RC-port1,raw,echo=0 pty,link=/tmp/tty-RC-port2,raw,echo=0

@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdio.h>
+
 #define RECEIVER 0
 #define SENDER 1
 #define FLAG 0x7E
@@ -18,6 +20,8 @@
 #define REJ_CONTROL_BYTE(r) (BIT(7*(r)) | 0x01)
 
 #define DATA_SIZE 256
+#define ACTUAL_DATA_SIZE (DATA_SIZE - 4)
+#define MAX_STUFFED_SIZE (DATA_SIZE * 2 + 2)
 
 #define C_DATA 0x01
 #define C_START 0x02
@@ -63,7 +67,7 @@ int receive_information_frame(int fd, unsigned char* buffer);
 
 int send_information_frame(int fd, unsigned char* buffer, int length);
 
-int parseFile(unsigned char* fileName, unsigned char* buf);
+int parseFile(unsigned char* fileName, FILE *ptr);
 
 int saveFile(unsigned char* buf);
 
@@ -71,7 +75,7 @@ int stuffing(unsigned char* buf, int size, unsigned char BCC2, unsigned char* st
 
 int destuffing(unsigned char* buf, int size, unsigned char *destuffed);
 
-int send_data(int fd, long file_size, unsigned char* file);
+int send_data(int fd, long file_size, FILE *ptr);
 
 void create_data_packet(unsigned char* data, int data_size, unsigned char* packet, int packet_size, int sequence_number);
 
