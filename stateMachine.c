@@ -63,9 +63,3 @@ int state_machine(unsigned char byte, states *state, int type)
     *state = START;
     return -1;
 }
-
-
-void ack_state_machine(unsigned char byte, states *state, int type, int parity)
-{
-    return;
-}

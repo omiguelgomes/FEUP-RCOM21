@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <time.h>
 #include <string.h>
@@ -13,12 +14,9 @@
 
 /*
 TO DO:
-  - Tratar do input (erros e assim)
   - Alarme (provavelmente ter as tentativas fora e usar o alarm só para o tempo mesmo)
-  - Receber ackownledgments (send_information_frame())
-  - Acabar de por free() onde é preciso
-  - Maybe criar mais ficheiros para organização
-  (...)
+  - Verificar acknowledgments direito (receive_ack())
+  - O que fazer quando receber acknowledgments (send_information_frame())
 */
 
 
@@ -53,7 +51,11 @@ int main(int argc, char** argv)
   }
   else if(type == SENDER)
   {
-    send_file(fd, argv[3]);
+    if(argc < 4){
+      char default_file[11] = "pinguim.gif";
+      send_file(fd, &default_file);
+    }
+    else send_file(fd, argv[3]);
   }
 
   t = clock() - t;
@@ -91,11 +93,9 @@ int send_file(int fd, unsigned char* file_path){
 int receive_file(int fd){
   long file_size;
   unsigned char *file_name = NULL;
-  unsigned char buffer[2*DATA_SIZE];
+  unsigned char buffer[DATA_SIZE];
   FILE *file;
   int sequence_number = 0;
-
-  printf("N\n");
 
   read_control_packet(fd, C_START, &file_size, &file_name);
 

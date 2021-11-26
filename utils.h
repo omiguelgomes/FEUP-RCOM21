@@ -41,17 +41,6 @@ void create_frame(int role, int tramaType, unsigned char *set);
 unsigned char create_BCC2(unsigned char* data, int dataLength);
 
 /**
- * @brief Create a information frame object
- * 
- * @param frame Buffer where frame is stored
- * @param control Value to place in the 'C' field of the frame
- * @param data Datat to place in the 'Data' field of the frame
- * @param dataLength Length of the data field
- * @return int 0 on success; exits with -1 on failure
- */
-int create_information_frame(unsigned char *frame, unsigned char control, unsigned char* data, int dataLength);
-
-/**
  * @brief Writes frame in the serial port
  * 
  * @param frame Buffer that contains the frame
@@ -66,8 +55,6 @@ int receive_frame(int fd, int type);
 int receive_information_frame(int fd, unsigned char* buffer);
 
 int send_information_frame(int fd, unsigned char* buffer, int length);
-
-int parseFile(unsigned char* fileName, FILE *ptr);
 
 int saveFile(unsigned char* buf);
 

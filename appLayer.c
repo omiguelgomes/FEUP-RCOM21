@@ -9,8 +9,6 @@
 #include "alarme.h"
 #include "stateMachine.h"
 
-//int s = 0;
-
 extern int flag;
 
 int llopen(char* port, int role)
@@ -96,31 +94,6 @@ int llopen(char* port, int role)
 
 int llwrite(int fd, unsigned char* buffer, int length)
 {
-  /*int total = length + 6;
-  unsigned char* frame[total];
-  if (create_information_frame(frame, INFO_CONTROL_BYTE(s), buffer, length) != 0){
-    perror("Error in creating information frame.");
-    exit(-1);
-  }
-  
-  int ack;
-  turnOnAlarm(3, 3);
-
-  send_frame(frame, fd, total);
-  do {
-    send_frame(frame, fd, total);
-
-    while(flag == 1) {
-      send_frame(frame, fd, total);
-      
-    }
-
-    ack = receive_ack(fd);
-  } while (ack != RR);
-
-  turnOffAlarm();
-  s = 1 - s;
-  return total;*/
   return send_information_frame(fd, buffer, length);
 }
 
