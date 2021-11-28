@@ -65,7 +65,7 @@ int llopen(char* port, int role)
     }
     else if(role == SENDER)
     {
-      turnOnAlarm(3, 3);
+      setupAlarm(3, 3);
 
       //SEND SET
       unsigned char set[5];
@@ -86,7 +86,7 @@ int llopen(char* port, int role)
       }
       
 
-      turnOffAlarm();
+      setupAlarm(3, 0);
     }
 
     return fd;
@@ -108,7 +108,7 @@ int llclose(int fd, int role){
     //RECEIVE DISC
     receive_frame(fd, DISC);
 
-    turnOnAlarm(3, 3);
+    setupAlarm(3, 3);
 
     //SEND DISC
     unsigned char disc[5];
@@ -125,7 +125,7 @@ int llclose(int fd, int role){
       receive_frame(fd, UA);
     }
 
-    turnOffAlarm();
+    setupAlarm(3, 0);
 
   }
   else if(role == SENDER)
@@ -135,7 +135,7 @@ int llclose(int fd, int role){
     create_frame(role, DISC, disc);
     send_frame(disc, fd, 5);
 
-    turnOnAlarm(3, 3);
+    setupAlarm(3, 3);
 
     //RECEIVE DISC
     receive_frame(fd, DISC);
@@ -147,7 +147,7 @@ int llclose(int fd, int role){
       receive_frame(fd, DISC);
     }
 
-    turnOffAlarm();
+    setupAlarm(3, 0);
 
     //SEND UA
     unsigned char ua[5];
