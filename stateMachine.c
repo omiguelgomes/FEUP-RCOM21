@@ -17,7 +17,8 @@ int state_machine(unsigned char byte, states *state, int type)
         
         case FLAG_RCV:
             byte1 = byte; 
-            if(byte1 == 0x03 || byte1 == 0x01)
+            if(byte == FLAG) return 0;
+            else if(byte1 == 0x03 || byte1 == 0x01)
             {
                 *state = A_RCV;
                 return 0;
@@ -39,7 +40,11 @@ int state_machine(unsigned char byte, states *state, int type)
                     byte_expected = 0x07;
                     break;
             }
-            if(byte2 == byte_expected){
+            if(byte2 == FLAG){
+                *state = FLAG_RCV;
+                return 0;
+            }
+            else if(byte2 == byte_expected){
                 *state = C_RCV;
                 return 0;
             }
@@ -47,7 +52,11 @@ int state_machine(unsigned char byte, states *state, int type)
         }
         case C_RCV:
         {   
-            if(byte == (byte1 ^ byte2)){
+            if(byte == FLAG){
+                *state = FLAG_RCV;
+                return 0;
+            }
+            else if(byte == (byte1 ^ byte2)){
                 *state = BCC_OK;
                 return 0;
             }
@@ -61,5 +70,5 @@ int state_machine(unsigned char byte, states *state, int type)
             break;  
     }
     *state = START;
-    return -1;
+    return 0;
 }

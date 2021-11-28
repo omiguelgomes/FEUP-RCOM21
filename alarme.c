@@ -9,13 +9,15 @@ int maxTries, timeout;
 
 void atende()                   // atende alarme (alarm handler)
 {
-   printf("alarme # %d\n", conta);
-   flag = 1;
-	conta++;
-
-   if(conta > maxTries)
+   if(conta <= maxTries){
+      printf("alarme # %d\n", conta);
+      flag = 1;
+      conta++;
+      alarm(timeout);
+   }
+   else
    {
-      printf("Maximum attempts reached, aborting connection\n");
+      printf("Maximum attempts reached(%i), aborting connection\n", maxTries);
       exit(-1);
    }
 }
@@ -24,14 +26,9 @@ void setupAlarm(int newMaxTries, int newTimeout)
 {
    maxTries = newMaxTries;
    timeout = newTimeout;
+   conta = 1;
    (void) signal(SIGALRM, atende);  // instala  rotina que atende interrupcao
-
-   while (conta < maxTries+1){
-      if (flag){
-         alarm(timeout);
-         flag = 0;
-      }
-   }
+   alarm(timeout);
 }
 
 

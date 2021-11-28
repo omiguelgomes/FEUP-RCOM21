@@ -9,6 +9,7 @@
 
 int r = 1;
 int s = 0;
+extern int flag;
 
 void create_frame(int role, int tramaType, unsigned char *set)
 {
@@ -69,16 +70,18 @@ int receive_frame(int fd, int type)
     int res;
     unsigned char buf[5];
 
-    while (state != STOP) {
+    while (state != STOP && !flag) {
         res = read(fd, buf, 1);
         if(res == -1) {
             perror("Error reading frame");
             exit(-1);
         }
         else if(res > 0){
-            if (state_machine(buf[0], &state, type) == -1) return 1;
+            state_machine(buf[0], &state, type);
         }
     }
+
+    if(flag) return -1;
     return 0;
 }
 
@@ -292,12 +295,23 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
 
     int total = stuffedSize + 5;
 
+    int finish = 0;
+    setupAlarm(3, 3);
+
     send_frame(frame, fd, total);
 
-    //FALTA RECEIVE_ACK
-    int ack = receive_ack(fd);
-    printf("ACK: %i\n", ack);
+    while(!finish){
+        int ack = receive_ack(fd);
+        if(flag || ack == REJ){ //DOUBT
+            send_frame(frame, fd, total);
+            flag = 0;
+        }
 
+        if(ack == RR){
+            alarm(0);
+            finish = 1;
+        }
+    }
     s = 1 - s;
     return total;
 }
@@ -307,7 +321,7 @@ int receive_ack(int fd){
     int res, i = 0, ack;
     unsigned char buf[1], byte1, byte2;
 
-    while (state != STOP){
+    while (state != STOP && !flag){
         res = read(fd, buf, 1);
         if (res == -1){
             perror("Error reading information frame");
@@ -329,12 +343,12 @@ int receive_ack(int fd){
                 case A_RCV:
                     byte2 = buf[0];
                     if(byte2 == FLAG) state = FLAG_RCV;
-                    else if(byte2 && 0x05 == 0x05){
+                    else if((byte2 & 0x05) == 0x05){
                         ack = RR;
                         state = C_RCV;
                         break;
                     }
-                    else if (byte2 && 0x01 == 0x01){
+                    else if ((byte2 & 0x01) == 0x01){
                         ack = REJ;
                         state = C_RCV;
                         break;
@@ -359,6 +373,7 @@ int receive_ack(int fd){
             }
         }
     }
+    if(flag) return -1;
     return 0;
 }
 

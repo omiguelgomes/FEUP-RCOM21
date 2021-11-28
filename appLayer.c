@@ -65,6 +65,7 @@ int llopen(char* port, int role)
     }
     else if(role == SENDER)
     {
+      int finish = 0;
       setupAlarm(3, 3);
 
       //SEND SET
@@ -72,21 +73,19 @@ int llopen(char* port, int role)
       create_frame(role, SET, set);
       send_frame(set, fd, 5);
 
-      //RECEIVE UA
-      res = receive_frame(fd, UA);
+      while (!finish){
+        //RECEIVE UA
+        res = receive_frame(fd, UA);
+        if(flag){
+          send_frame(set, fd, 5);
+          flag = 0;
+        }
 
-      //If nothing is received, resend set, and try to receive UA again
-      if(res == 1){
-        while(flag == 1)
-          { 
-            send_frame(set, fd, 5);
-            printf("123\n");
-            if (receive_frame(fd, UA) == 0) break;
-          }
+        if(res == 0){
+          alarm(0);
+          finish = 1;
+        }
       }
-      
-
-      setupAlarm(3, 0);
     }
 
     return fd;
@@ -108,6 +107,7 @@ int llclose(int fd, int role){
     //RECEIVE DISC
     receive_frame(fd, DISC);
 
+    int finish = 0;
     setupAlarm(3, 3);
 
     //SEND DISC
@@ -115,39 +115,44 @@ int llclose(int fd, int role){
     create_frame(role, DISC, disc);
     send_frame(disc, fd, 5);
 
-    //RECEIVE UA
-    receive_frame(fd, UA);
+    while (!finish){
+      //RECEIVE UA
+      int res = receive_frame(fd, UA);
+      if(flag){
+        send_frame(disc, fd, 5);
+        flag = 0;
+      }
 
-    //If nothing is received, resend disc, and try to receive UA again
-    while(flag == 1)
-    { 
-      send_frame(disc, fd, 5);
-      receive_frame(fd, UA);
+      if(res == 0){
+        alarm(0);
+        finish = 1;
+      }
     }
-
-    setupAlarm(3, 0);
 
   }
   else if(role == SENDER)
   {
+    int finish = 0;
+    setupAlarm(3, 3);
+
     //SEND DISC
     unsigned char disc[5];
     create_frame(role, DISC, disc);
     send_frame(disc, fd, 5);
 
-    setupAlarm(3, 3);
+    while (!finish){
+      //RECEIVE DISC
+      int res = receive_frame(fd, DISC);
+      if(flag){
+        send_frame(disc, fd, 5);
+        flag = 0;
+      }
 
-    //RECEIVE DISC
-    receive_frame(fd, DISC);
-
-    //If nothing is received, resend set, and try to receive UA again
-    while(flag == 1)
-    { 
-      send_frame(disc, fd, 5);
-      receive_frame(fd, DISC);
+      if(res == 0){
+        alarm(0);
+        finish = 1;
+      }
     }
-
-    setupAlarm(3, 0);
 
     //SEND UA
     unsigned char ua[5];

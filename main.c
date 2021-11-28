@@ -38,8 +38,6 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  setupAlarm();
-
   fd = llopen(argv[1], type);
 
   clock_t t;
@@ -99,8 +97,11 @@ int receive_file(int fd){
 
   read_control_packet(fd, C_START, &file_size, &file_name);
 
-  file_name[0] = 'a';
-
+  char received[9] = "received_";
+  file_name = realloc(file_name, strlen(file_name) + 9);
+  memcpy(file_name + 9, file_name, strlen(file_name));
+  memcpy(file_name, &received, 9);
+  
   if((file = fopen(file_name, "w")) == NULL){
       perror("Error creating file");
       exit(-1);

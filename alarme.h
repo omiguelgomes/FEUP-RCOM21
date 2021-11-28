@@ -2,8 +2,6 @@
 #define ALARME_H
 
 void atende();
-void setupAlarm();
-void turnOnAlarm(int newMaxTries, int newTimeout);
-void turnOffAlarm();
+void setupAlarm(int newMaxTries, int newTimeout);
 
 #endif
