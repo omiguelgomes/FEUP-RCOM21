@@ -56,8 +56,6 @@ int receive_information_frame(int fd, unsigned char* buffer);
 
 int send_information_frame(int fd, unsigned char* buffer, int length);
 
-int saveFile(unsigned char* buf);
-
 int stuffing(unsigned char* buf, int size, unsigned char BCC2, unsigned char* stuffed);
 
 int destuffing(unsigned char* buf, int size, unsigned char *destuffed);

@@ -3,8 +3,8 @@ TARGET = main
 
 all: ret
 
-ret: main.o utils.o appLayer.o stateMachine.o alarme.o
-	$(CC) $(CFLAGS) -o $(TARGET) main.o utils.o appLayer.o stateMachine.o alarme.o
+ret: main.o utils.o dataLayer.o stateMachine.o alarme.o
+	$(CC) $(CFLAGS) -o $(TARGET) main.o utils.o dataLayer.o stateMachine.o alarme.o
 
 main.o: main.c
 		gcc -c main.c
@@ -12,8 +12,8 @@ main.o: main.c
 utils.o: utils.c
 		gcc -c utils.c
 
-appLayer.o: appLayer.c
-		gcc -c appLayer.c
+dataLayer.o: dataLayer.c
+		gcc -c dataLayer.c
 
 stateMachine.o: stateMachine.c
 		gcc -c stateMachine.c

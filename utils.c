@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "alarme.h"
 #include "stateMachine.h"
-#include "appLayer.h"
+#include "dataLayer.h"
 
 int r = 1;
 int s = 0;
@@ -252,6 +252,7 @@ int receive_information_frame(int fd, unsigned char* buffer){
                         state = START;
                     }
                     else if (received_BCC2 != calculated_BCC2){
+                        printf("REJ\n");
                         r = 1 - r;
                         create_frame(0, REJ, frame);
                         r = 1 - r;
@@ -290,7 +291,7 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
     frame[3] = (frame[1] ^ frame[2]);
 
     memcpy(frame + 4, stuffedData, stuffedSize);
-    
+
     frame[stuffedSize + 4] = FLAG;
 
     int total = stuffedSize + 5;
@@ -302,7 +303,7 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
 
     while(!finish){
         int ack = receive_ack(fd);
-        if(flag || ack == REJ){ //DOUBT
+        if(flag){
             send_frame(frame, fd, total);
             flag = 0;
         }
@@ -310,6 +311,11 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
         if(ack == RR){
             alarm(0);
             finish = 1;
+        }
+        else if(ack == REJ){
+            alarm(3);
+            send_frame(frame, fd, total);
+            flag = 0;
         }
     }
     s = 1 - s;

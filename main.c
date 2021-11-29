@@ -8,17 +8,9 @@
 #include <time.h>
 #include <string.h>
 #include "main.h"
-#include "appLayer.h"
+#include "dataLayer.h"
 #include "alarme.h"
 #include "utils.h"
-
-/*
-TO DO:
-  - Alarme (provavelmente ter as tentativas fora e usar o alarm só para o tempo mesmo)
-  - Verificar acknowledgments direito (receive_ack())
-  - O que fazer quando receber acknowledgments (send_information_frame())
-*/
-
 
 volatile int STOP = FALSE;
 
@@ -26,11 +18,10 @@ int main(int argc, char** argv)
 {
   int fd, c, res, type;
 
-  /*if((argc < 4) ||
-    (((strcmp("/dev/ttyS0", argv[1]) != 0) && (strcmp("/dev/ttyS1", argv[1])!=0)) || ((strcmp("/dev/ttyS10", argv[1])!=0) && (strcmp("/dev/ttyS11", argv[1])!=0)))){
+  if((argc < 3) || (strcmp("/dev/ttyS10", argv[1])!=0) && (strcmp("/dev/ttyS11", argv[1])!=0)){
       printf("Usage: nserial SerialPort\n ex: nserial /dev/ttyS1\n");
       exit(1);
-  }*/
+  }
 
   type = atoi(argv[2]);
   if(type != RECEIVER && type != SENDER){

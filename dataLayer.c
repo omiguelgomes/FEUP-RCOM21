@@ -5,16 +5,17 @@
 #include <strings.h>
 #include <unistd.h>
 #include "utils.h"
-#include "appLayer.h"
+#include "dataLayer.h"
 #include "alarme.h"
 #include "stateMachine.h"
 
 extern int flag;
+struct termios oldtio;
 
 int llopen(char* port, int role)
 {
     int res;
-    struct termios oldtio, newtio;
+    struct termios newtio;
 
     //OPEN PORT
     int fd = open(port, O_RDWR | O_NOCTTY);
@@ -160,7 +161,7 @@ int llclose(int fd, int role){
     send_frame(ua, fd, 5);
   }
 
-  /*tcsetattr(fd,TCSANOW,&oldtio);*/
+  tcsetattr(fd,TCSANOW,&oldtio);
   close(fd);
   return 0;
 }
