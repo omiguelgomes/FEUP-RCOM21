@@ -158,7 +158,7 @@ int send_data(int fd, long file_size, FILE *ptr)
 
     for(long i = 0; i < file_size; i += ACTUAL_DATA_SIZE){
         if(file_size - i < ACTUAL_DATA_SIZE){
-            data_size = file_size - i + 1;
+            data_size = file_size - i;
         }
         else data_size = ACTUAL_DATA_SIZE;
 
@@ -252,7 +252,7 @@ int receive_information_frame(int fd, unsigned char* buffer){
                         state = START;
                     }
                     else if (received_BCC2 != calculated_BCC2){
-                        printf("SEND_REJ\n");
+                        printf("Received wrong information, sending reject\n");
                         r = 1 - r;
                         create_frame(0, REJ, frame);
                         r = 1 - r;
@@ -299,6 +299,17 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
     int finish = 0;
     setupAlarm(3, 3);
 
+    unsigned char temp;
+
+    int num = (rand() %
+        (50)) + 1;
+
+    if((num % 50) == 0){
+        temp = frame[length/2];
+        frame[length/2] = 0;
+        printf("Sending wrong information\n");
+    }
+
     send_frame(frame, fd, total);
 
     while(!finish){
@@ -315,6 +326,8 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
         }
         else if(ack == REJ){
             alarm(3);
+            frame[length/2] = temp;
+            printf("Received reject, resending frame\n");
             send_frame(frame, fd, total);
             flag = 0;
         }
