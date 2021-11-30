@@ -252,7 +252,7 @@ int receive_information_frame(int fd, unsigned char* buffer){
                         state = START;
                     }
                     else if (received_BCC2 != calculated_BCC2){
-                        printf("REJ\n");
+                        printf("SEND_REJ\n");
                         r = 1 - r;
                         create_frame(0, REJ, frame);
                         r = 1 - r;
@@ -304,6 +304,7 @@ int send_information_frame(int fd, unsigned char* buffer, int length){
     while(!finish){
         int ack = receive_ack(fd);
         if(flag){
+            printf("Did not receive response, resending frame\n");
             send_frame(frame, fd, total);
             flag = 0;
         }

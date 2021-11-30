@@ -12,6 +12,8 @@
 #include "alarme.h"
 #include "utils.h"
 
+#define PENGUIN_SIZE 11000
+
 volatile int STOP = FALSE;
 
 int main(int argc, char** argv)
@@ -53,6 +55,10 @@ int main(int argc, char** argv)
 
   double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
   printf("Transfer took %f seconds to execute \n", time_taken);
+
+  double transfer_speed = PENGUIN_SIZE/time_taken;
+
+  printf("Transfer speed (bytes/s): %f\n", transfer_speed);
 
   return 0;
 }
