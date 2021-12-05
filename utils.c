@@ -158,7 +158,7 @@ int send_data(int fd, long file_size, FILE *ptr)
 
     for(long i = 0; i < file_size; i += ACTUAL_DATA_SIZE){
         if(file_size - i < ACTUAL_DATA_SIZE){
-            data_size = file_size - i;
+            data_size = file_size - i + 1;
         }
         else data_size = ACTUAL_DATA_SIZE;
 
