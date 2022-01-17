@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include<arpa/inet.h>
 
-int main(int argc, char *argv[]) {
+int main_getIp(int argc, char *argv[]) {
     struct hostent *h;
 
     if (argc != 2) {
