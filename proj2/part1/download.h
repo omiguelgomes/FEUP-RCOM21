@@ -20,4 +20,10 @@ typedef enum {
     HOST_OK,
 } url_parse_states;
 
+typedef enum {
+    USER_AND_PASS,
+    USER,
+    NONE
+} url_type_states;
+
 #endif

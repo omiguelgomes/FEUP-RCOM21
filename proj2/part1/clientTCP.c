@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
         perror("connect()");
         exit(-1);
     }
+
+    
     /*send a string to the server*/
     bytes = write(sockfd, buf, strlen(buf));
     if (bytes > 0)

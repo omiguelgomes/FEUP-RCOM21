@@ -1,5 +1,15 @@
 #include "download.h"
 #include "utils.h"
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <errno.h> 
+#include <netdb.h> 
+#include <sys/types.h>
+#include <netinet/in.h> 
+#include <arpa/inet.h>
+#include <libgen.h>
+#include <unistd.h>
+#include <string.h>
 
 int parseURL(char *arg, struct url *url)
 {
@@ -8,6 +18,26 @@ int parseURL(char *arg, struct url *url)
     int i = 0;
     int indexToWrite = 0;
     url_parse_states state = START;
+    url_type_states type_state = NONE;
+
+    //ftp://[<user>:<password>@]<host>/<url-path>
+
+    //username was provided
+    if(strstr(arg, "@"))
+    {
+        //password was provided
+        if(strlen(strstr(arg, ":")) != 1)
+        {   
+            type_state = USER_AND_PASS;
+        }
+        else{
+            type_state = USER;
+        }
+    }
+    else{
+        strcpy(url->user, "anonymous");
+        type_state = NONE;
+    }
 
     while(i < urlSize)
     {
@@ -25,6 +55,12 @@ int parseURL(char *arg, struct url *url)
                 break;
 
             case(PREFIX_OK):
+                if(type_state == NONE)
+                {
+                    state = PASS_OK;
+                    i--;
+                    break;
+                }
                 if(arg[i] != ':')
                 {
                     url->user[indexToWrite] = arg[i];
@@ -37,6 +73,11 @@ int parseURL(char *arg, struct url *url)
                 break;
 
             case(USER_OK):
+                if(type_state == USER)
+                {
+                    state = PASS_OK;
+                    break;
+                }
                 if(arg[i] != '@')
                 {
                     url->password[indexToWrite] = arg[i];
@@ -67,6 +108,10 @@ int parseURL(char *arg, struct url *url)
         }
         i++;
     }
+    printf("- %s\n", url->user);
+    printf("- %s\n", url->password);
+    printf("- %s\n", url->host);
+    printf("- %s\n", url->path);
     return 0;
 }
 
@@ -89,9 +134,6 @@ int main(int argc, char** argv){
         fprintf(stderr, "Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
         exit(1);
     }
-    else{
-        exit(0);
-    }
 
     struct hostent *h;
     if ((h = gethostbyname(url.host)) == NULL) {
@@ -101,32 +143,79 @@ int main(int argc, char** argv){
 
     char* address = inet_ntoa(*((struct in_addr *) h->h_addr));
 
-    int sockfd = create_socket(address);
+    int sockfd = create_socket(address, SERVER_PORT);
     
-    char reply[3];
+    char* reply = malloc(3);
 
     // Welcome message
     reply = read_from_socket(sockfd);
 
-    if(reply[0] == '4' || reply[0] == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+    if(reply == '4' || reply == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+        printf("Error in welcome reply.\n");
         close(sockfd);
-        exit(0);
+        exit(-1);
     }
 
     // Enter user
-    
+    write_socket(sockfd, "user ", url.user);
+    reply = read_from_socket(sockfd);
 
-    // Receive password request -> Enter pasword -> Receive successful login OR Receive successful login
+    if(reply == '4' || reply == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+        printf("Error in user reply.\n");
+        close(sockfd);
+        exit(-1);
+    }
+    else if (reply == '3'){
+        //Enter password
+        write_socket(sockfd, "pass ", url.password);
+        reply = read_from_socket(sockfd);
 
+        if(reply == '4' || reply == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+            printf("Error in pass reply.\n");
+            close(sockfd);
+            exit(-1);
+        }
+    }
 
-    // Enter pasv
+    write_socket(sockfd, "pasv", "");
 
-    // Receive passv reply
+    // Receive & handle pasv reply
+    int pasv_sockfd = read_pasv(sockfd);
+
+    write_socket(sockfd, "retr ", url.path);
+    reply = read_from_socket(sockfd);
+
+    if(reply == '4' || reply == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+        printf("Error in retr reply.\n");
+        close(sockfd);
+        close(pasv_sockfd);
+        exit(-1);
+    }
+
+    printf("BEF\n");
+
+    if (download_file(pasv_sockfd, url.path) < 0){
+        close(sockfd);
+        close(pasv_sockfd);
+        exit(-1);
+    }
+
+    printf("AFTER\n");
+
+    reply = read_from_socket(sockfd);
+    if(reply == '4' || reply == '5'){  //Transient Negative Completion reply (4) or Permanent Negative Completion reply (5)
+        printf("Error in download reply.\n");
+        close(sockfd);
+        close(pasv_sockfd);
+        exit(-1);
+    }
     
     if (close(sockfd) < 0) {
         perror("close()");
         exit(-1);
     }
+    if (close(pasv_sockfd) < 0) {
+        perror("close()");
+        exit(-1);
+    }
 }
-
-//ftp://[<user>:<password>@]<host>/<url-path>
